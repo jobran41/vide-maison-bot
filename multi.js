@@ -8,7 +8,7 @@ function getCurrentTimestamp() {
     return `${now.toISOString()} -`;
 }
 
-// Function to perform Google search and handle links
+// Function to perform Google search and handle links for a single query
 async function performGoogleSearch(query) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
@@ -58,13 +58,13 @@ async function performGoogleSearch(query) {
             const anchorTags = Array.from(document.querySelectorAll('a'));
             return anchorTags
                 .map(a => a.href)
-                .filter(href => href && !href.includes('sca_esv') && !href.includes('ved'));
+                .filter(href => href && !href.includes('sca_esv') && !href.includes('ved') && !href.includes('videmaisonsbruxelles'));
         });
 
         // Log filtered links with timestamp
         const timestamp = getCurrentTimestamp();
-        console.log(`${timestamp} Filtered links:`, links);
-        fs.appendFileSync('logfile.log', `${timestamp} Filtered links: ${links.join(', ')}\n`);
+        console.log(`${timestamp} Filtered links for query "${query}":`, links);
+        fs.appendFileSync('logfile.log', `${timestamp} Filtered links for query "${query}": ${links.join(', ')}\n`);
 
         // Open each filtered link in a new tab
         for (const link of links) {
@@ -80,17 +80,29 @@ async function performGoogleSearch(query) {
 
     } catch (error) {
         const timestamp = getCurrentTimestamp();
-        console.error(`${timestamp} An error occurred:`, error);
-        fs.appendFileSync('logfile.log', `${timestamp} Error: ${error.message}\n`);
+        console.error(`${timestamp} An error occurred for query "${query}":`, error);
+        fs.appendFileSync('logfile.log', `${timestamp} Error for query "${query}": ${error.message}\n`);
     } finally {
         await browser.close();
     }
 }
 
+// Function to handle multiple queries
+async function performMultipleSearches(queries) {
+    for (const query of queries) {
+        await performGoogleSearch(query);
+    }
+}
+
 // Schedule the task to run every 5 minutes
 cron.schedule('*/5 * * * *', () => {
-    const searchQuery = 'vide maison';
-    performGoogleSearch(searchQuery).catch(err => {
+    const searchQueries = [
+        'vide maison',
+        'vide grenier',
+        'vide maison bruxelles',
+        'vide appartement'
+    ];
+    performMultipleSearches(searchQueries).catch(err => {
         const timestamp = getCurrentTimestamp();
         fs.appendFileSync('logfile.log', `${timestamp} Error during scheduled task: ${err.message}\n`);
     });
