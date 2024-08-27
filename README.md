@@ -14,3 +14,6 @@ bash
 Copy code
 */5 * * * * /usr/bin/node /path/to/your/script/google_search.js
 Make sure to replace /usr/bin/node with the path to your Node.js executable and /path/to/your/script/google_search.js with the path to your script.
+
+for 1 hour: 
+0 0 * * * /usr/bin/node /path/to/your/script/google_search.js
