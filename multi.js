@@ -1,5 +1,14 @@
 const puppeteer = require('puppeteer');
+const cron = require('node-cron');
+const fs = require('fs');
 
+// Function to get the current timestamp
+function getCurrentTimestamp() {
+    const now = new Date();
+    return `${now.toISOString()} -`;
+}
+
+// Function to perform Google search and handle links
 async function performGoogleSearch(query) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
@@ -31,6 +40,9 @@ async function performGoogleSearch(query) {
             await page.screenshot({ path: 'modal_issue.png' });  // Take a screenshot for debugging
         }
 
+        // Add a screenshot before searching to debug the issue
+        await page.screenshot({ path: 'before_search.png' });
+
         // Wait for the search input field using its ID
         await page.waitForSelector('#APjFqb', { visible: true, timeout: 30000 });
 
@@ -49,13 +61,16 @@ async function performGoogleSearch(query) {
                 .filter(href => href && !href.includes('sca_esv') && !href.includes('ved'));
         });
 
-        console.log('Filtered links:', links);
+        // Log filtered links with timestamp
+        const timestamp = getCurrentTimestamp();
+        console.log(`${timestamp} Filtered links:`, links);
+        fs.appendFileSync('logfile.log', `${timestamp} Filtered links: ${links.join(', ')}\n`);
 
         // Open each filtered link in a new tab
         for (const link of links) {
             const newPage = await browser.newPage();
             await newPage.goto(link, { waitUntil: 'domcontentloaded' });
-            console.log(`Opened: ${link}`);
+            console.log(`${timestamp} Opened: ${link}`);
 
             // Pause for 2 seconds to simulate some interaction or waiting time
             await new Promise(resolve => setTimeout(resolve, 2000));
@@ -64,13 +79,19 @@ async function performGoogleSearch(query) {
         }
 
     } catch (error) {
-        console.error("An error occurred:", error);
+        const timestamp = getCurrentTimestamp();
+        console.error(`${timestamp} An error occurred:`, error);
+        fs.appendFileSync('logfile.log', `${timestamp} Error: ${error.message}\n`);
     } finally {
         await browser.close();
     }
 }
 
-(async () => {
+// Schedule the task to run every 5 minutes
+cron.schedule('*/5 * * * *', () => {
     const searchQuery = 'vide maison';
-    await performGoogleSearch(searchQuery);
-})();
+    performGoogleSearch(searchQuery).catch(err => {
+        const timestamp = getCurrentTimestamp();
+        fs.appendFileSync('logfile.log', `${timestamp} Error during scheduled task: ${err.message}\n`);
+    });
+});
