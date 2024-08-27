@@ -10,7 +10,7 @@ function getCurrentTimestamp() {
 
 // Function to perform Google search and handle links for a single query
 async function performGoogleSearch(query) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     try {
@@ -99,8 +99,13 @@ cron.schedule('*/5 * * * *', () => {
     const searchQueries = [
         'vide maison',
         'vide grenier',
-        'vide maison bruxelles',
-        'vide appartement'
+        'vide maisons bruxelles',
+        'vide grenier bruxelles',
+        'vide Maison Bruxelles Vide Grenier',
+        'vide appartement',
+        'vide appartement bruxelles',
+        'vide tout bruxelles',
+
     ];
     performMultipleSearches(searchQueries).catch(err => {
         const timestamp = getCurrentTimestamp();
